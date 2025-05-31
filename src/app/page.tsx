@@ -17,6 +17,9 @@ export default function Home() {
               <Link href="/contact" className="text-gray-700 hover:text-blue-600">اتصل بنا</Link>
             </nav>
             <div className="flex items-center space-x-4">
+              <Link href="/admin" className="text-gray-600 hover:text-gray-800 text-sm">
+                إدارة
+              </Link>
               <a href="tel:+212600000000" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                 📞 اتصل الآن
               </a>

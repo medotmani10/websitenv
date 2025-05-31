@@ -1,7 +1,25 @@
-import Link from "next/link";
+'use client';
 
-// بيانات المنازل التجريبية
-const properties = [
+import Link from "next/link";
+import { useState, useEffect } from 'react';
+
+interface Property {
+  id: number;
+  title: string;
+  location: string;
+  price: string;
+  bedrooms: number;
+  bathrooms: number;
+  area: string;
+  phone: string;
+  features: string[];
+  category: string;
+  status: 'available' | 'rented' | 'maintenance';
+  featured: boolean;
+}
+
+// بيانات المنازل التجريبية الافتراضية
+const defaultProperties = [
   {
     id: 1,
     title: "فيلا فاخرة في الرباط",
@@ -10,9 +28,11 @@ const properties = [
     bedrooms: 4,
     bathrooms: 3,
     area: "250 متر مربع",
-    image: "/api/placeholder/400/300",
     phone: "+212 6 00 00 00 01",
-    features: ["مسبح", "حديقة", "موقف سيارات", "مكيف هواء"]
+    features: ["مسبح", "حديقة", "موقف سيارات", "مكيف هواء"],
+    category: "فيلا",
+    status: "available" as const,
+    featured: true
   },
   {
     id: 2,
@@ -22,9 +42,11 @@ const properties = [
     bedrooms: 2,
     bathrooms: 2,
     area: "120 متر مربع",
-    image: "/api/placeholder/400/300",
     phone: "+212 6 00 00 00 02",
-    features: ["مصعد", "أمن 24/7", "موقف سيارات", "شرفة"]
+    features: ["مصعد", "أمن 24/7", "موقف سيارات", "شرفة"],
+    category: "شقة",
+    status: "available" as const,
+    featured: false
   },
   {
     id: 3,
@@ -34,9 +56,11 @@ const properties = [
     bedrooms: 3,
     bathrooms: 2,
     area: "180 متر مربع",
-    image: "/api/placeholder/400/300",
     phone: "+212 6 00 00 00 03",
-    features: ["فناء داخلي", "تصميم تقليدي", "موقع مركزي", "هادئ"]
+    features: ["فناء داخلي", "تصميم تقليدي", "موقع مركزي", "هادئ"],
+    category: "منزل تقليدي",
+    status: "available" as const,
+    featured: false
   },
   {
     id: 4,
@@ -46,9 +70,11 @@ const properties = [
     bedrooms: 3,
     bathrooms: 2,
     area: "150 متر مربع",
-    image: "/api/placeholder/400/300",
     phone: "+212 6 00 00 00 04",
-    features: ["إطلالة بحرية", "شرفة كبيرة", "قريب من الشاطئ", "مفروش"]
+    features: ["إطلالة بحرية", "شرفة كبيرة", "قريب من الشاطئ", "مفروش"],
+    category: "شقة",
+    status: "available" as const,
+    featured: true
   },
   {
     id: 5,
@@ -58,9 +84,11 @@ const properties = [
     bedrooms: 1,
     bathrooms: 1,
     area: "60 متر مربع",
-    image: "/api/placeholder/400/300",
     phone: "+212 6 00 00 00 05",
-    features: ["مفروش بالكامل", "مطبخ مجهز", "قريب من المدينة القديمة", "واي فاي"]
+    features: ["مفروش بالكامل", "مطبخ مجهز", "قريب من المدينة القديمة", "واي فاي"],
+    category: "استوديو",
+    status: "available" as const,
+    featured: false
   },
   {
     id: 6,
@@ -70,13 +98,43 @@ const properties = [
     bedrooms: 5,
     bathrooms: 4,
     area: "300 متر مربع",
-    image: "/api/placeholder/400/300",
     phone: "+212 6 00 00 00 06",
-    features: ["حديقة كبيرة", "مسبح خاص", "قريب من الشاطئ", "موقف 3 سيارات"]
+    features: ["حديقة كبيرة", "مسبح خاص", "قريب من الشاطئ", "موقف 3 سيارات"],
+    category: "فيلا",
+    status: "available" as const,
+    featured: true
   }
 ];
 
 export default function Properties() {
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // تحميل العقارات من localStorage
+    const savedProperties = localStorage.getItem('properties');
+    if (savedProperties) {
+      const parsedProperties = JSON.parse(savedProperties);
+      // عرض العقارات المتاحة فقط
+      setProperties(parsedProperties.filter((p: Property) => p.status === 'available'));
+    } else {
+      // استخدام البيانات الافتراضية
+      setProperties(defaultProperties.filter(p => p.status === 'available'));
+    }
+    setLoading(false);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">🏠</div>
+          <p className="text-lg text-gray-600">جاري تحميل العقارات...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
