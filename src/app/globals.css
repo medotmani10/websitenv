@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  direction: rtl;
+}
+
+/* تحسينات للغة العربية */
+* {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* تحسين عرض النصوص العربية */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* تحسين المسافات للنصوص العربية */
+p {
+  line-height: 1.6;
+}
+
+/* تحسين الأزرار للغة العربية */
+button, .btn {
+  font-weight: 600;
+}
+
+/* تحسين الروابط */
+a {
+  transition: all 0.2s ease-in-out;
+}
+
+/* تحسين التخطيط للغة العربية */
+.rtl-fix {
+  direction: rtl;
+  text-align: right;
+}
