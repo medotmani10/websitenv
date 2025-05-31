@@ -16,6 +16,8 @@ interface Property {
   category: string;
   status: 'available' | 'rented' | 'maintenance';
   featured: boolean;
+  images: string[];
+  mainImage: string;
 }
 
 export default function AdminProperties() {
@@ -55,7 +57,9 @@ export default function AdminProperties() {
           features: ["مسبح", "حديقة", "موقف سيارات", "مكيف هواء"],
           category: "فيلا",
           status: "available",
-          featured: true
+          featured: true,
+          images: [],
+          mainImage: ""
         },
         {
           id: 2,
@@ -69,7 +73,9 @@ export default function AdminProperties() {
           features: ["مصعد", "أمن 24/7", "موقف سيارات", "شرفة"],
           category: "شقة",
           status: "available",
-          featured: false
+          featured: false,
+          images: [],
+          mainImage: ""
         }
       ];
       setProperties(defaultProperties);
@@ -177,6 +183,9 @@ export default function AdminProperties() {
                     العقار
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    الصور
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     الموقع
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -200,6 +209,28 @@ export default function AdminProperties() {
                       <div>
                         <div className="text-sm font-medium text-gray-900">{property.title}</div>
                         <div className="text-sm text-gray-500">{property.category}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-2">
+                        {property.mainImage ? (
+                          <img
+                            src={property.mainImage}
+                            alt={property.title}
+                            className="w-12 h-12 object-cover rounded"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">
+                            📷
+                          </div>
+                        )}
+                        <div className="text-sm text-gray-600">
+                          {property.images.length > 0 ? `${property.images.length} صور` : 'لا توجد صور'}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -306,10 +337,14 @@ function PropertyFormModal({
     features: property?.features || [],
     category: property?.category || 'شقة',
     status: property?.status || 'available',
-    featured: property?.featured || false
+    featured: property?.featured || false,
+    images: property?.images || [],
+    mainImage: property?.mainImage || ''
   });
 
   const [newFeature, setNewFeature] = useState('');
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -334,6 +369,80 @@ function PropertyFormModal({
       ...formData,
       features: formData.features.filter((_, i) => i !== index)
     });
+  };
+
+  // معالجة رفع الصور
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIsUploading(true);
+
+      // التحقق من نوع الملف
+      if (!file.type.startsWith('image/')) {
+        alert('يرجى اختيار ملف صورة صالح');
+        setIsUploading(false);
+        return;
+      }
+
+      // التحقق من حجم الملف (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('حجم الصورة كبير جداً. يرجى اختيار صورة أصغر من 5MB');
+        setIsUploading(false);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const imageUrl = event.target?.result as string;
+        setImagePreview(imageUrl);
+
+        // إضافة الصورة إلى قائمة الصور
+        const newImages = [...formData.images, imageUrl];
+        setFormData({
+          ...formData,
+          images: newImages,
+          mainImage: formData.mainImage || imageUrl // تعيين كصورة رئيسية إذا لم تكن موجودة
+        });
+
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // حذف صورة
+  const removeImage = (index: number) => {
+    const imageToRemove = formData.images[index];
+    const newImages = formData.images.filter((_, i) => i !== index);
+
+    setFormData({
+      ...formData,
+      images: newImages,
+      mainImage: formData.mainImage === imageToRemove
+        ? (newImages.length > 0 ? newImages[0] : '')
+        : formData.mainImage
+    });
+  };
+
+  // تعيين صورة رئيسية
+  const setMainImage = (imageUrl: string) => {
+    setFormData({
+      ...formData,
+      mainImage: imageUrl
+    });
+  };
+
+  // إضافة صورة من رابط
+  const addImageFromUrl = () => {
+    const url = prompt('أدخل رابط الصورة:');
+    if (url && url.trim()) {
+      const newImages = [...formData.images, url.trim()];
+      setFormData({
+        ...formData,
+        images: newImages,
+        mainImage: formData.mainImage || url.trim()
+      });
+    }
   };
 
   return (
@@ -499,7 +608,104 @@ function PropertyFormModal({
                 ))}
               </div>
             </div>
-            
+
+            {/* إدارة الصور */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                صور العقار
+              </label>
+
+              {/* أزرار إضافة الصور */}
+              <div className="flex gap-2 mb-4">
+                <label className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 cursor-pointer transition-colors">
+                  {isUploading ? '⏳ جاري الرفع...' : '📁 رفع صورة'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    disabled={isUploading}
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={addImageFromUrl}
+                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+                >
+                  🔗 إضافة من رابط
+                </button>
+              </div>
+
+              {/* معرض الصور */}
+              {formData.images.length > 0 && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {formData.images.map((image, index) => (
+                      <div key={index} className="relative group">
+                        <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden">
+                          <img
+                            src={image}
+                            alt={`صورة ${index + 1}`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuOCteODvOOCuOOBjOiqreOBv+i+vOOBvuOBvuOBm+OCk+OBp+OBl+OBnw==</text></svg>';
+                            }}
+                          />
+                        </div>
+
+                        {/* أزرار التحكم */}
+                        <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setMainImage(image)}
+                            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                              formData.mainImage === image
+                                ? 'bg-yellow-500 text-white'
+                                : 'bg-white text-gray-800 hover:bg-yellow-100'
+                            }`}
+                          >
+                            {formData.mainImage === image ? '⭐ رئيسية' : '☆ رئيسية'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 transition-colors"
+                          >
+                            🗑️ حذف
+                          </button>
+                        </div>
+
+                        {/* مؤشر الصورة الرئيسية */}
+                        {formData.mainImage === image && (
+                          <div className="absolute top-2 right-2 bg-yellow-500 text-white px-2 py-1 rounded text-xs font-medium">
+                            ⭐ رئيسية
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="text-sm text-gray-600">
+                    <p>💡 نصائح:</p>
+                    <ul className="list-disc list-inside space-y-1 text-xs">
+                      <li>انقر على "رئيسية" لتعيين الصورة الرئيسية للعقار</li>
+                      <li>الحد الأقصى لحجم الصورة: 5MB</li>
+                      <li>الصيغ المدعومة: JPG, PNG, GIF, WebP</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {formData.images.length === 0 && (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                  <div className="text-4xl mb-2">📷</div>
+                  <p className="text-gray-600 mb-2">لا توجد صور للعقار</p>
+                  <p className="text-sm text-gray-500">استخدم الأزرار أعلاه لإضافة صور</p>
+                </div>
+              )}
+            </div>
+
             {/* خيارات إضافية */}
             <div className="flex items-center space-x-4">
               <label className="flex items-center">

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from 'react';
+import ImageGallery from '../components/ImageGallery';
 
 interface Property {
   id: number;
@@ -16,6 +17,8 @@ interface Property {
   category: string;
   status: 'available' | 'rented' | 'maintenance';
   featured: boolean;
+  images: string[];
+  mainImage: string;
 }
 
 // بيانات المنازل التجريبية الافتراضية
@@ -32,7 +35,9 @@ const defaultProperties = [
     features: ["مسبح", "حديقة", "موقف سيارات", "مكيف هواء"],
     category: "فيلا",
     status: "available" as const,
-    featured: true
+    featured: true,
+    images: [],
+    mainImage: ""
   },
   {
     id: 2,
@@ -46,7 +51,9 @@ const defaultProperties = [
     features: ["مصعد", "أمن 24/7", "موقف سيارات", "شرفة"],
     category: "شقة",
     status: "available" as const,
-    featured: false
+    featured: false,
+    images: [],
+    mainImage: ""
   },
   {
     id: 3,
@@ -60,7 +67,9 @@ const defaultProperties = [
     features: ["فناء داخلي", "تصميم تقليدي", "موقع مركزي", "هادئ"],
     category: "منزل تقليدي",
     status: "available" as const,
-    featured: false
+    featured: false,
+    images: [],
+    mainImage: ""
   },
   {
     id: 4,
@@ -74,7 +83,9 @@ const defaultProperties = [
     features: ["إطلالة بحرية", "شرفة كبيرة", "قريب من الشاطئ", "مفروش"],
     category: "شقة",
     status: "available" as const,
-    featured: true
+    featured: true,
+    images: [],
+    mainImage: ""
   },
   {
     id: 5,
@@ -88,7 +99,9 @@ const defaultProperties = [
     features: ["مفروش بالكامل", "مطبخ مجهز", "قريب من المدينة القديمة", "واي فاي"],
     category: "استوديو",
     status: "available" as const,
-    featured: false
+    featured: false,
+    images: [],
+    mainImage: ""
   },
   {
     id: 6,
@@ -102,13 +115,17 @@ const defaultProperties = [
     features: ["حديقة كبيرة", "مسبح خاص", "قريب من الشاطئ", "موقف 3 سيارات"],
     category: "فيلا",
     status: "available" as const,
-    featured: true
+    featured: true,
+    images: [],
+    mainImage: ""
   }
 ];
 
 export default function Properties() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [showGallery, setShowGallery] = useState(false);
 
   useEffect(() => {
     // تحميل العقارات من localStorage
@@ -123,6 +140,18 @@ export default function Properties() {
     }
     setLoading(false);
   }, []);
+
+  const openGallery = (property: Property) => {
+    if (property.images.length > 0) {
+      setSelectedProperty(property);
+      setShowGallery(true);
+    }
+  };
+
+  const closeGallery = () => {
+    setShowGallery(false);
+    setSelectedProperty(null);
+  };
 
   if (loading) {
     return (
@@ -175,10 +204,43 @@ export default function Properties() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {properties.map((property) => (
               <div key={property.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="relative h-48 bg-gray-200">
-                  <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                    🏠 صورة المنزل
-                  </div>
+                <div
+                  className="relative h-48 bg-gray-200 cursor-pointer"
+                  onClick={() => openGallery(property)}
+                >
+                  {property.mainImage ? (
+                    <img
+                      src={property.mainImage}
+                      alt={property.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = '<div class="absolute inset-0 flex items-center justify-center text-gray-500">🏠 صورة المنزل</div>';
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+                      🏠 صورة المنزل
+                    </div>
+                  )}
+
+                  {/* مؤشر العقار المميز */}
+                  {property.featured && (
+                    <div className="absolute top-2 right-2 bg-yellow-500 text-white px-2 py-1 rounded text-xs font-medium">
+                      ⭐ مميز
+                    </div>
+                  )}
+
+                  {/* مؤشر عدد الصور */}
+                  {property.images.length > 1 && (
+                    <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
+                      📷 {property.images.length} صور
+                    </div>
+                  )}
                 </div>
                 <div className="p-6">
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">{property.title}</h3>
@@ -212,14 +274,24 @@ export default function Properties() {
                   </div>
 
                   <div className="border-t pt-4">
+                    {/* زر عرض الصور */}
+                    {property.images.length > 0 && (
+                      <button
+                        onClick={() => openGallery(property)}
+                        className="w-full bg-purple-600 text-white text-center py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors font-semibold mb-2"
+                      >
+                        📷 عرض الصور ({property.images.length})
+                      </button>
+                    )}
+
                     <div className="flex flex-col sm:flex-row gap-2">
-                      <a 
+                      <a
                         href={`tel:${property.phone}`}
                         className="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
                       >
                         📞 اتصل للحجز
                       </a>
-                      <a 
+                      <a
                         href={`https://wa.me/${property.phone.replace(/\s/g, '').replace('+', '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -262,6 +334,15 @@ export default function Properties() {
           </div>
         </div>
       </footer>
+
+      {/* معرض الصور */}
+      {showGallery && selectedProperty && (
+        <ImageGallery
+          images={selectedProperty.images}
+          title={selectedProperty.title}
+          onClose={closeGallery}
+        />
+      )}
     </div>
   );
 }
