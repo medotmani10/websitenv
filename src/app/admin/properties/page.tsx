@@ -85,7 +85,56 @@ export default function AdminProperties() {
 
   const saveProperties = (newProperties: Property[]) => {
     setProperties(newProperties);
-    localStorage.setItem('properties', JSON.stringify(newProperties));
+    try {
+      // تنظيف البيانات قبل الحفظ لتوفير المساحة
+      const cleanedProperties = newProperties.map(property => ({
+        ...property,
+        // ضغط الصور الكبيرة أو إزالة الصور المكررة
+        images: property.images.slice(0, 10), // الحد الأقصى 10 صور لكل عقار
+        // ضغط النص الطويل
+        title: property.title.slice(0, 100),
+        location: property.location.slice(0, 100),
+        features: property.features.slice(0, 10) // الحد الأقصى 10 مميزات
+      }));
+
+      localStorage.setItem('properties', JSON.stringify(cleanedProperties));
+    } catch (error) {
+      console.error('خطأ في حفظ البيانات:', error);
+
+      // في حالة تجاوز الحد، احذف البيانات القديمة واحفظ الجديدة فقط
+      if (error instanceof DOMException && error.code === 22) {
+        try {
+          // احذف البيانات القديمة
+          localStorage.removeItem('properties');
+
+          // احفظ آخر 50 عقار فقط
+          const limitedProperties = newProperties.slice(-50).map(property => ({
+            id: property.id,
+            title: property.title.slice(0, 50),
+            location: property.location.slice(0, 50),
+            price: property.price,
+            bedrooms: property.bedrooms,
+            bathrooms: property.bathrooms,
+            area: property.area,
+            phone: property.phone,
+            features: property.features.slice(0, 5),
+            category: property.category,
+            status: property.status,
+            featured: property.featured,
+            images: [], // إزالة الصور لتوفير المساحة
+            mainImage: ""
+          }));
+
+          localStorage.setItem('properties', JSON.stringify(limitedProperties));
+          alert('تم حفظ البيانات مع تقليل حجمها. تم الاحتفاظ بآخر 50 عقار فقط.');
+        } catch (secondError) {
+          console.error('خطأ في الحفظ المحدود:', secondError);
+          alert('خطأ في حفظ البيانات. يرجى تقليل عدد العقارات أو الصور.');
+        }
+      } else {
+        alert('خطأ في حفظ البيانات: ' + error.message);
+      }
+    }
   };
 
   const handleDelete = (id: number) => {
@@ -103,10 +152,57 @@ export default function AdminProperties() {
   };
 
   const toggleFeatured = (id: number) => {
-    const newProperties = properties.map(p => 
+    const newProperties = properties.map(p =>
       p.id === id ? { ...p, featured: !p.featured } : p
     );
     saveProperties(newProperties);
+  };
+
+  // دالة لتنظيف التخزين المحلي
+  const cleanupStorage = () => {
+    if (confirm('هل تريد تنظيف التخزين المحلي؟ سيتم الاحتفاظ بآخر 30 عقار فقط وإزالة جميع الصور.')) {
+      try {
+        const limitedProperties = properties.slice(-30).map(property => ({
+          id: property.id,
+          title: property.title.slice(0, 50),
+          location: property.location.slice(0, 50),
+          price: property.price,
+          bedrooms: property.bedrooms,
+          bathrooms: property.bathrooms,
+          area: property.area,
+          phone: property.phone,
+          features: property.features.slice(0, 5),
+          category: property.category,
+          status: property.status,
+          featured: property.featured,
+          images: [],
+          mainImage: ""
+        }));
+
+        localStorage.removeItem('properties');
+        localStorage.setItem('properties', JSON.stringify(limitedProperties));
+        setProperties(limitedProperties);
+        alert('تم تنظيف التخزين بنجاح. تم الاحتفاظ بآخر 30 عقار.');
+      } catch (error) {
+        alert('خطأ في تنظيف التخزين: ' + error.message);
+      }
+    }
+  };
+
+  // دالة لحساب حجم التخزين المستخدم
+  const getStorageSize = () => {
+    try {
+      const data = localStorage.getItem('properties');
+      if (data) {
+        const sizeInBytes = new Blob([data]).size;
+        const sizeInKB = (sizeInBytes / 1024).toFixed(2);
+        const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2);
+        return { bytes: sizeInBytes, kb: sizeInKB, mb: sizeInMB };
+      }
+    } catch (error) {
+      console.error('خطأ في حساب حجم التخزين:', error);
+    }
+    return { bytes: 0, kb: '0', mb: '0' };
   };
 
   if (!isLoggedIn) {
@@ -137,7 +233,7 @@ export default function AdminProperties() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">{properties.length}</div>
@@ -168,7 +264,37 @@ export default function AdminProperties() {
               <div className="text-sm text-gray-600">مميز</div>
             </div>
           </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="text-center">
+              <div className="text-lg font-bold text-purple-600">{getStorageSize().mb} MB</div>
+              <div className="text-sm text-gray-600">حجم التخزين</div>
+              <button
+                onClick={cleanupStorage}
+                className="mt-2 text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded hover:bg-purple-200"
+              >
+                تنظيف التخزين
+              </button>
+            </div>
+          </div>
         </div>
+
+        {/* Storage Warning */}
+        {parseFloat(getStorageSize().mb) > 4 && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">
+                  <strong>تحذير:</strong> حجم التخزين كبير ({getStorageSize().mb} MB). يُنصح بتنظيف التخزين لتجنب مشاكل الحفظ.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Properties Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -371,8 +497,39 @@ function PropertyFormModal({
     });
   };
 
+  // دالة ضغط الصور
+  const compressImage = (file: File, maxWidth: number = 800, quality: number = 0.7): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      img.onload = () => {
+        // حساب الأبعاد الجديدة
+        let { width, height } = img;
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // رسم الصورة المضغوطة
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // تحويل إلى base64 مع ضغط
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressedDataUrl);
+      };
+
+      img.onerror = () => reject(new Error('فشل في تحميل الصورة'));
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   // معالجة رفع الصور
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setIsUploading(true);
@@ -384,29 +541,39 @@ function PropertyFormModal({
         return;
       }
 
-      // التحقق من حجم الملف (5MB max)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('حجم الصورة كبير جداً. يرجى اختيار صورة أصغر من 5MB');
+      // التحقق من حجم الملف (10MB max قبل الضغط)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('حجم الصورة كبير جداً. يرجى اختيار صورة أصغر من 10MB');
         setIsUploading(false);
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const imageUrl = event.target?.result as string;
-        setImagePreview(imageUrl);
+      try {
+        // ضغط الصورة
+        const compressedImageUrl = await compressImage(file, 800, 0.7);
+        setImagePreview(compressedImageUrl);
 
-        // إضافة الصورة إلى قائمة الصور
-        const newImages = [...formData.images, imageUrl];
+        // التحقق من عدد الصور (حد أقصى 10 صور)
+        if (formData.images.length >= 10) {
+          alert('لا يمكن إضافة أكثر من 10 صور لكل عقار');
+          setIsUploading(false);
+          return;
+        }
+
+        // إضافة الصورة المضغوطة إلى قائمة الصور
+        const newImages = [...formData.images, compressedImageUrl];
         setFormData({
           ...formData,
           images: newImages,
-          mainImage: formData.mainImage || imageUrl // تعيين كصورة رئيسية إذا لم تكن موجودة
+          mainImage: formData.mainImage || compressedImageUrl // تعيين كصورة رئيسية إذا لم تكن موجودة
         });
 
         setIsUploading(false);
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('خطأ في ضغط الصورة:', error);
+        alert('فشل في معالجة الصورة. يرجى المحاولة مرة أخرى.');
+        setIsUploading(false);
+      }
     }
   };
 
