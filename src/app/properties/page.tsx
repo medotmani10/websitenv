@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from 'react';
 import ImageGallery from '../components/ImageGallery';
-import { propertyService, Property } from '../../lib/supabase';
+import { propertyService, Property, isSupabaseConfigured } from '../../lib/supabase';
 
 // Property interface is now imported from supabase.ts
 
@@ -133,14 +133,19 @@ export default function Properties() {
   const loadProperties = async () => {
     try {
       setLoading(true);
-      const data = await propertyService.getAvailable();
-      // تحويل البيانات لتتماشى مع الواجهة الحالية
-      const formattedData = data.map(property => ({
-        ...property,
-        mainImage: property.main_image,
-        images: property.images || []
-      }));
-      setProperties(formattedData);
+
+      // التحقق من إعداد Supabase
+      if (isSupabaseConfigured()) {
+        const data = await propertyService.getAvailable();
+        // تحويل البيانات لتتماشى مع الواجهة الحالية
+        const formattedData = data.map(property => ({
+          ...property,
+          mainImage: property.main_image,
+          images: property.images || []
+        }));
+        setProperties(formattedData);
+        return;
+      }
     } catch (error) {
       console.error('خطأ في تحميل العقارات:', error);
       // في حالة فشل تحميل البيانات من قاعدة البيانات، استخدم البيانات المحلية

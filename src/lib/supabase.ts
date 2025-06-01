@@ -1,9 +1,17 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// استخدام المتغيرات الحقيقية مع قيم افتراضية للبناء
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://xqfnywimjnrvhoblutqt.supabase.co'
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxZm55d2ltam5ydmhvYmx1dHF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3Mzg0NzYsImV4cCI6MjA2NDMxNDQ3Nn0.Yj2AX6Fl5auLggLc7Waux4caVdbtMx-3u14J914-EzQ'
 
+// إنشاء عميل Supabase
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+// التحقق من إعداد Supabase
+export const isSupabaseConfigured = () => {
+  return supabaseUrl && supabaseAnonKey &&
+         supabaseUrl.includes('xqfnywimjnrvhoblutqt.supabase.co')
+}
 
 // Types for our database
 export interface Property {
@@ -56,7 +64,7 @@ export const propertyService = {
       .from('properties')
       .select('*')
       .order('created_at', { ascending: false })
-    
+
     if (error) throw error
     return data as Property[]
   },
@@ -68,7 +76,7 @@ export const propertyService = {
       .select('*')
       .eq('status', 'available')
       .order('created_at', { ascending: false })
-    
+
     if (error) throw error
     return data as Property[]
   },
@@ -216,7 +224,7 @@ export const storageService = {
     const fileName = `${Math.random()}.${fileExt}`
     const filePath = `${fileName}`
 
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from(bucket)
       .upload(filePath, file)
 
