@@ -197,6 +197,82 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Property Types Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h3 className="text-3xl font-bold text-gray-900 mb-4">استكشف حسب نوع السكن</h3>
+            <p className="text-lg text-gray-600">اختر من بين مجموعة متنوعة من خيارات الإقامة التي تناسب احتياجاتك</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Studio */}
+            <Link href="/properties?type=studio" className="group cursor-pointer">
+              <div className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                <img
+                  src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
+                  alt="استوديو"
+                  className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-30 transition-all duration-300"></div>
+                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                  <h4 className="text-xl font-bold mb-2">استوديو</h4>
+                  <p className="text-sm text-gray-200">195 خيار</p>
+                </div>
+              </div>
+            </Link>
+
+            {/* Chalet */}
+            <Link href="/properties?type=chalet" className="group cursor-pointer">
+              <div className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                <img
+                  src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
+                  alt="شاليه"
+                  className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-30 transition-all duration-300"></div>
+                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                  <h4 className="text-xl font-bold mb-2">شاليه</h4>
+                  <p className="text-sm text-gray-200">85 خيار</p>
+                </div>
+              </div>
+            </Link>
+
+            {/* Apartment */}
+            <Link href="/properties?type=apartment" className="group cursor-pointer">
+              <div className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                <img
+                  src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
+                  alt="شقة"
+                  className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-30 transition-all duration-300"></div>
+                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                  <h4 className="text-xl font-bold mb-2">شقة</h4>
+                  <p className="text-sm text-gray-200">250 خيار</p>
+                </div>
+              </div>
+            </Link>
+
+            {/* Villa */}
+            <Link href="/properties?type=villa" className="group cursor-pointer">
+              <div className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                <img
+                  src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
+                  alt="فيلا"
+                  className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-30 transition-all duration-300"></div>
+                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                  <h4 className="text-xl font-bold mb-2">فيلا</h4>
+                  <p className="text-sm text-gray-200">120 خيار</p>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Featured Properties Section */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
