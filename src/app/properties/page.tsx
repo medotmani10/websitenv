@@ -126,6 +126,12 @@ export default function Properties() {
   const [loading, setLoading] = useState(true);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [showGallery, setShowGallery] = useState(false);
+  const [filters, setFilters] = useState({
+    type: '',
+    location: '',
+    priceRange: '',
+    bedrooms: ''
+  });
 
   useEffect(() => {
     // تحميل العقارات من localStorage
@@ -139,6 +145,13 @@ export default function Properties() {
       setProperties(defaultProperties.filter(p => p.status === 'available'));
     }
     setLoading(false);
+
+    // فحص معاملات URL للفلترة
+    const urlParams = new URLSearchParams(window.location.search);
+    const typeParam = urlParams.get('type');
+    if (typeParam) {
+      setFilters(prev => ({ ...prev, type: typeParam }));
+    }
   }, []);
 
   const openGallery = (property: Property) => {
@@ -153,6 +166,20 @@ export default function Properties() {
     setSelectedProperty(null);
   };
 
+  // فلترة العقارات
+  const filteredProperties = properties.filter(property => {
+    if (filters.type && !property.category.toLowerCase().includes(filters.type.toLowerCase())) {
+      return false;
+    }
+    if (filters.location && !property.location.toLowerCase().includes(filters.location.toLowerCase())) {
+      return false;
+    }
+    if (filters.bedrooms && property.bedrooms.toString() !== filters.bedrooms) {
+      return false;
+    }
+    return true;
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -165,160 +192,244 @@ export default function Properties() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <Link href="/" className="text-2xl font-bold text-gray-900">🏠 كراء المنازل</Link>
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-8">
+              <Link href="/" className="text-2xl font-bold text-red-500">بيتي</Link>
+              <nav className="hidden md:flex space-x-8">
+                <Link href="/" className="text-gray-700 hover:text-red-500">الرئيسية</Link>
+                <Link href="/properties" className="text-red-500 hover:text-red-600 font-medium">جميع العقارات</Link>
+                <Link href="/contact" className="text-gray-700 hover:text-red-500">اتصل بنا</Link>
+                <Link href="/about" className="text-gray-700 hover:text-red-500">عن المنصة</Link>
+              </nav>
             </div>
-            <nav className="hidden md:flex space-x-8">
-              <Link href="/" className="text-gray-700 hover:text-blue-600">الرئيسية</Link>
-              <Link href="/properties" className="text-gray-900 hover:text-blue-600">المنازل</Link>
-              <Link href="/about" className="text-gray-700 hover:text-blue-600">من نحن</Link>
-              <Link href="/contact" className="text-gray-700 hover:text-blue-600">اتصل بنا</Link>
-            </nav>
             <div className="flex items-center space-x-4">
-              <a href="tel:+212600000000" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                📞 اتصل الآن
-              </a>
+              <button className="p-2 text-gray-600 hover:text-red-500">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                </svg>
+              </button>
+              <Link href="/admin" className="text-gray-600 hover:text-red-500 text-sm">إدارة</Link>
+              <button className="bg-red-500 text-white px-6 py-2 rounded-full hover:bg-red-600 transition-colors">
+                تسجيل الدخول
+              </button>
             </div>
           </div>
         </div>
       </header>
 
       {/* Page Header */}
-      <section className="bg-blue-600 text-white py-16">
+      <section className="bg-red-500 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl font-bold mb-4">المنازل المتاحة للكراء</h1>
-            <p className="text-xl text-blue-100">اختر من بين مجموعة واسعة من المنازل في أفضل المواقع</p>
+            <h1 className="text-4xl font-bold mb-4">جميع العقارات المتاحة</h1>
+            <p className="text-xl text-red-100">اختر من بين مجموعة واسعة من العقارات في أفضل المواقع</p>
+            <p className="text-lg text-red-200 mt-2">
+              {filteredProperties.length} عقار متاح
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Filters Section */}
+      <section className="bg-white py-8 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">نوع العقار</label>
+              <select
+                value={filters.type}
+                onChange={(e) => setFilters({...filters, type: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              >
+                <option value="">جميع الأنواع</option>
+                <option value="استوديو">استوديو</option>
+                <option value="شقة">شقة</option>
+                <option value="فيلا">فيلا</option>
+                <option value="شاليه">شاليه</option>
+                <option value="منزل">منزل</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">المدينة</label>
+              <input
+                type="text"
+                value={filters.location}
+                onChange={(e) => setFilters({...filters, location: e.target.value})}
+                placeholder="ابحث بالمدينة..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">عدد غرف النوم</label>
+              <select
+                value={filters.bedrooms}
+                onChange={(e) => setFilters({...filters, bedrooms: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              >
+                <option value="">أي عدد</option>
+                <option value="1">1 غرفة</option>
+                <option value="2">2 غرفة</option>
+                <option value="3">3 غرف</option>
+                <option value="4">4 غرف</option>
+                <option value="5">5+ غرف</option>
+              </select>
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={() => setFilters({type: '', location: '', priceRange: '', bedrooms: ''})}
+                className="w-full bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                مسح الفلاتر
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Properties Grid */}
-      <section className="py-16">
+      <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {properties.map((property) => (
-              <div key={property.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+          {filteredProperties.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="text-6xl mb-4">🏠</div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">لا توجد عقارات متطابقة</h3>
+              <p className="text-gray-600 mb-6">جرب تغيير معايير البحث أو مسح الفلاتر</p>
+              <button
+                onClick={() => setFilters({type: '', location: '', priceRange: '', bedrooms: ''})}
+                className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors"
+              >
+                مسح جميع الفلاتر
+              </button>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredProperties.map((property) => (
+              <div key={property.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 group">
                 <div
-                  className="relative h-48 bg-gray-200 cursor-pointer"
+                  className="relative h-64 bg-gray-200 cursor-pointer overflow-hidden"
                   onClick={() => openGallery(property)}
                 >
                   {property.mainImage ? (
                     <img
                       src={property.mainImage}
                       alt={property.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
                         const parent = target.parentElement;
                         if (parent) {
-                          parent.innerHTML = '<div class="absolute inset-0 flex items-center justify-center text-gray-500">🏠 صورة المنزل</div>';
+                          parent.innerHTML = '<div class="absolute inset-0 flex items-center justify-center text-gray-500 text-4xl">🏠</div>';
                         }
                       }}
                     />
                   ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                      🏠 صورة المنزل
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-4xl">
+                      🏠
                     </div>
                   )}
 
                   {/* مؤشر العقار المميز */}
                   {property.featured && (
-                    <div className="absolute top-2 right-2 bg-yellow-500 text-white px-2 py-1 rounded text-xs font-medium">
+                    <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
                       ⭐ مميز
                     </div>
                   )}
 
                   {/* مؤشر عدد الصور */}
                   {property.images.length > 1 && (
-                    <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
-                      📷 {property.images.length} صور
+                    <div className="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm">
+                      📷 {property.images.length}
                     </div>
                   )}
                 </div>
                 <div className="p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{property.title}</h3>
-                  <p className="text-gray-600 mb-2">📍 {property.location}</p>
-                  <p className="text-2xl font-bold text-blue-600 mb-4">{property.price}</p>
-                  
-                  <div className="grid grid-cols-3 gap-4 mb-4 text-sm text-gray-600">
-                    <div className="text-center">
-                      <div className="font-semibold">🛏️ {property.bedrooms}</div>
-                      <div>غرف نوم</div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{property.title}</h3>
+                  <p className="text-gray-600 mb-3 flex items-center">
+                    <svg className="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                    </svg>
+                    {property.location}
+                  </p>
+                  <p className="text-2xl font-bold text-red-500 mb-4">{property.price}</p>
+
+                  <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <div className="text-lg font-bold text-gray-900">🛏️ {property.bedrooms}</div>
+                      <div className="text-gray-600">غرف نوم</div>
                     </div>
-                    <div className="text-center">
-                      <div className="font-semibold">🚿 {property.bathrooms}</div>
-                      <div>حمامات</div>
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <div className="text-lg font-bold text-gray-900">🚿 {property.bathrooms}</div>
+                      <div className="text-gray-600">حمامات</div>
                     </div>
-                    <div className="text-center">
-                      <div className="font-semibold">📐 {property.area}</div>
-                      <div>المساحة</div>
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <div className="text-lg font-bold text-gray-900">📐</div>
+                      <div className="text-gray-600">{property.area}</div>
                     </div>
                   </div>
 
-                  <div className="mb-4">
-                    <h4 className="font-semibold text-gray-900 mb-2">المميزات:</h4>
+                  <div className="mb-6">
+                    <h4 className="font-semibold text-gray-900 mb-3">المميزات:</h4>
                     <div className="flex flex-wrap gap-2">
                       {property.features.map((feature, index) => (
-                        <span key={index} className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm">
+                        <span key={index} className="bg-red-50 text-red-700 px-3 py-1 rounded-full text-sm font-medium">
                           {feature}
                         </span>
                       ))}
                     </div>
                   </div>
 
-                  <div className="border-t pt-4">
+                  <div className="space-y-3">
                     {/* زر عرض الصور */}
                     {property.images.length > 0 && (
                       <button
                         onClick={() => openGallery(property)}
-                        className="w-full bg-purple-600 text-white text-center py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors font-semibold mb-2"
+                        className="w-full bg-gray-600 text-white text-center py-3 px-4 rounded-lg hover:bg-gray-700 transition-colors font-semibold flex items-center justify-center"
                       >
                         📷 عرض الصور ({property.images.length})
                       </button>
                     )}
 
-                    <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="grid grid-cols-2 gap-3">
                       <a
                         href={`tel:${property.phone}`}
-                        className="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                        className="bg-red-500 text-white text-center py-3 px-4 rounded-lg hover:bg-red-600 transition-colors font-semibold flex items-center justify-center"
                       >
-                        📞 اتصل للحجز
+                        📞 اتصل الآن
                       </a>
                       <a
                         href={`https://wa.me/${property.phone.replace(/\s/g, '').replace('+', '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 bg-green-600 text-white text-center py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                        className="bg-green-500 text-white text-center py-3 px-4 rounded-lg hover:bg-green-600 transition-colors font-semibold flex items-center justify-center"
                       >
                         💬 واتساب
                       </a>
                     </div>
-                    <p className="text-center text-sm text-gray-600 mt-2">{property.phone}</p>
+                    <p className="text-center text-sm text-gray-500">{property.phone}</p>
                   </div>
                 </div>
               </div>
             ))}
           </div>
+          )}
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="bg-gray-900 text-white py-16">
+      <section className="bg-red-500 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h3 className="text-3xl font-bold mb-4">لم تجد ما تبحث عنه؟</h3>
-          <p className="text-xl mb-8 text-gray-300">اتصل بنا وسنساعدك في العثور على المنزل المثالي حسب احتياجاتك</p>
+          <p className="text-xl mb-8 text-red-100">اتصل بنا وسنساعدك في العثور على العقار المثالي حسب احتياجاتك</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="tel:+212600000000" className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors inline-flex items-center justify-center">
+            <a href="tel:+212600000000" className="bg-white text-red-500 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors inline-flex items-center justify-center">
               📞 +212 6 00 00 00 00
             </a>
-            <a href="tel:+212700000000" className="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors inline-flex items-center justify-center">
+            <a href="tel:+212700000000" className="border-2 border-white text-white px-8 py-3 rounded-full font-semibold hover:bg-white hover:text-red-500 transition-colors inline-flex items-center justify-center">
               📱 +212 7 00 00 00 00
             </a>
           </div>
@@ -326,11 +437,53 @@ export default function Properties() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-white border-t">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center text-gray-600">
-            <p>&copy; 2024 كراء المنازل. جميع الحقوق محفوظة.</p>
-            <p className="mt-2">للحجز والاستفسار: 📞 +212 6 00 00 00 00</p>
+      <footer className="bg-gray-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {/* Company Info */}
+            <div>
+              <h3 className="text-2xl font-bold text-red-500 mb-4">بيتي</h3>
+              <p className="text-gray-300 mb-4">
+                منصة رائدة في مجال تأجير العقارات، نساعدك في العثور على منزل أحلامك بسهولة وأمان.
+              </p>
+            </div>
+
+            {/* Quick Links */}
+            <div>
+              <h4 className="text-lg font-semibold mb-4">روابط سريعة</h4>
+              <ul className="space-y-2">
+                <li><Link href="/" className="text-gray-300 hover:text-white">الرئيسية</Link></li>
+                <li><Link href="/properties" className="text-gray-300 hover:text-white">جميع العقارات</Link></li>
+                <li><Link href="/about" className="text-gray-300 hover:text-white">عن المنصة</Link></li>
+                <li><Link href="/contact" className="text-gray-300 hover:text-white">اتصل بنا</Link></li>
+              </ul>
+            </div>
+
+            {/* Services */}
+            <div>
+              <h4 className="text-lg font-semibold mb-4">خدماتنا</h4>
+              <ul className="space-y-2">
+                <li><span className="text-gray-300">تأجير الشقق</span></li>
+                <li><span className="text-gray-300">تأجير الفيلل</span></li>
+                <li><span className="text-gray-300">تأجير الاستوديوهات</span></li>
+                <li><span className="text-gray-300">استشارات عقارية</span></li>
+              </ul>
+            </div>
+
+            {/* Contact Info */}
+            <div>
+              <h4 className="text-lg font-semibold mb-4">تواصل معنا</h4>
+              <div className="space-y-2">
+                <p className="text-gray-300">📞 +212 6 00 00 00 00</p>
+                <p className="text-gray-300">📱 +212 7 00 00 00 00</p>
+                <p className="text-gray-300">✉️ info@beity.ma</p>
+                <p className="text-gray-300">📍 الدار البيضاء، المغرب</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center">
+            <p className="text-gray-400">&copy; 2024 بيتي. جميع الحقوق محفوظة.</p>
           </div>
         </div>
       </footer>
