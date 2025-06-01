@@ -2,23 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { propertyService, Property, storageService } from '../../../lib/supabase';
 
-interface Property {
-  id: number;
-  title: string;
-  location: string;
-  price: string;
-  bedrooms: number;
-  bathrooms: number;
-  area: string;
-  phone: string;
-  features: string[];
-  category: string;
-  status: 'available' | 'rented' | 'maintenance';
-  featured: boolean;
-  images: string[];
-  mainImage: string;
-}
+// Property interface is now imported from supabase.ts
 
 export default function AdminProperties() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -37,125 +23,124 @@ export default function AdminProperties() {
     loadProperties();
   }, []);
 
-  const loadProperties = () => {
-    // تحميل العقارات من localStorage أو استخدام البيانات الافتراضية
-    const savedProperties = localStorage.getItem('properties');
-    if (savedProperties) {
-      setProperties(JSON.parse(savedProperties));
-    } else {
-      // البيانات الافتراضية
-      const defaultProperties: Property[] = [
-        {
-          id: 1,
-          title: "فيلا فاخرة في الرباط",
-          location: "الرباط، المغرب",
-          price: "15,000 درهم/شهر",
-          bedrooms: 4,
-          bathrooms: 3,
-          area: "250 متر مربع",
-          phone: "+212 6 00 00 00 01",
-          features: ["مسبح", "حديقة", "موقف سيارات", "مكيف هواء"],
-          category: "فيلا",
-          status: "available",
-          featured: true,
-          images: [],
-          mainImage: ""
-        },
-        {
-          id: 2,
-          title: "شقة حديثة في الدار البيضاء",
-          location: "الدار البيضاء، المغرب",
-          price: "8,000 درهم/شهر",
-          bedrooms: 2,
-          bathrooms: 2,
-          area: "120 متر مربع",
-          phone: "+212 6 00 00 00 02",
-          features: ["مصعد", "أمن 24/7", "موقف سيارات", "شرفة"],
-          category: "شقة",
-          status: "available",
-          featured: false,
-          images: [],
-          mainImage: ""
-        }
-      ];
-      setProperties(defaultProperties);
-      localStorage.setItem('properties', JSON.stringify(defaultProperties));
-    }
-  };
-
-  const saveProperties = (newProperties: Property[]) => {
-    setProperties(newProperties);
+  const loadProperties = async () => {
     try {
-      // تنظيف البيانات قبل الحفظ لتوفير المساحة
-      const cleanedProperties = newProperties.map(property => ({
+      // تحميل العقارات من قاعدة البيانات
+      const data = await propertyService.getAll();
+      // تحويل البيانات لتتماشى مع الواجهة الحالية
+      const formattedData = data.map(property => ({
         ...property,
-        // ضغط الصور الكبيرة أو إزالة الصور المكررة
-        images: property.images.slice(0, 10), // الحد الأقصى 10 صور لكل عقار
-        // ضغط النص الطويل
-        title: property.title.slice(0, 100),
-        location: property.location.slice(0, 100),
-        features: property.features.slice(0, 10) // الحد الأقصى 10 مميزات
+        mainImage: property.main_image,
+        images: property.images || []
       }));
-
-      localStorage.setItem('properties', JSON.stringify(cleanedProperties));
+      setProperties(formattedData);
     } catch (error) {
-      console.error('خطأ في حفظ البيانات:', error);
+      console.error('خطأ في تحميل العقارات من قاعدة البيانات:', error);
 
-      // في حالة تجاوز الحد، احذف البيانات القديمة واحفظ الجديدة فقط
-      if (error instanceof DOMException && error.code === 22) {
-        try {
-          // احذف البيانات القديمة
-          localStorage.removeItem('properties');
-
-          // احفظ آخر 50 عقار فقط
-          const limitedProperties = newProperties.slice(-50).map(property => ({
-            id: property.id,
-            title: property.title.slice(0, 50),
-            location: property.location.slice(0, 50),
-            price: property.price,
-            bedrooms: property.bedrooms,
-            bathrooms: property.bathrooms,
-            area: property.area,
-            phone: property.phone,
-            features: property.features.slice(0, 5),
-            category: property.category,
-            status: property.status,
-            featured: property.featured,
-            images: [], // إزالة الصور لتوفير المساحة
-            mainImage: ""
-          }));
-
-          localStorage.setItem('properties', JSON.stringify(limitedProperties));
-          alert('تم حفظ البيانات مع تقليل حجمها. تم الاحتفاظ بآخر 50 عقار فقط.');
-        } catch (secondError) {
-          console.error('خطأ في الحفظ المحدود:', secondError);
-          alert('خطأ في حفظ البيانات. يرجى تقليل عدد العقارات أو الصور.');
-        }
+      // في حالة فشل تحميل البيانات من قاعدة البيانات، استخدم البيانات المحلية
+      const savedProperties = localStorage.getItem('properties');
+      if (savedProperties) {
+        setProperties(JSON.parse(savedProperties));
       } else {
-        alert('خطأ في حفظ البيانات: ' + error.message);
+        // البيانات الافتراضية
+        const defaultProperties: Property[] = [
+          {
+            id: 1,
+            title: "فيلا فاخرة في الرباط",
+            location: "الرباط، المغرب",
+            price: "15,000 درهم/شهر",
+            bedrooms: 4,
+            bathrooms: 3,
+            area: "250 متر مربع",
+            phone: "+212 6 00 00 00 01",
+            features: ["مسبح", "حديقة", "موقف سيارات", "مكيف هواء"],
+            category: "فيلا",
+            status: "available",
+            featured: true,
+            images: [],
+            main_image: "",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        ];
+        setProperties(defaultProperties);
+        // حفظ البيانات الافتراضية في قاعدة البيانات
+        try {
+          for (const property of defaultProperties) {
+            await propertyService.create(property);
+          }
+        } catch (dbError) {
+          console.error('خطأ في حفظ البيانات الافتراضية:', dbError);
+          localStorage.setItem('properties', JSON.stringify(defaultProperties));
+        }
       }
     }
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('هل أنت متأكد من حذف هذا العقار؟')) {
-      const newProperties = properties.filter(p => p.id !== id);
-      saveProperties(newProperties);
+  const saveProperties = async (newProperties: Property[]) => {
+    setProperties(newProperties);
+
+    // حفظ احتياطي في localStorage
+    try {
+      const cleanedProperties = newProperties.map(property => ({
+        ...property,
+        images: property.images.slice(0, 10),
+        title: property.title.slice(0, 100),
+        location: property.location.slice(0, 100),
+        features: property.features.slice(0, 10)
+      }));
+      localStorage.setItem('properties', JSON.stringify(cleanedProperties));
+    } catch (localError) {
+      console.warn('خطأ في الحفظ المحلي:', localError);
     }
   };
 
-  const handleStatusChange = (id: number, status: Property['status']) => {
-    const newProperties = properties.map(p => 
-      p.id === id ? { ...p, status } : p
-    );
-    saveProperties(newProperties);
+  const handleDelete = async (id: number) => {
+    if (confirm('هل أنت متأكد من حذف هذا العقار؟')) {
+      try {
+        await propertyService.delete(id);
+        const newProperties = properties.filter(p => p.id !== id);
+        setProperties(newProperties);
+        // حفظ احتياطي محلي
+        saveProperties(newProperties);
+      } catch (error) {
+        console.error('خطأ في حذف العقار:', error);
+        alert('فشل في حذف العقار. يرجى المحاولة مرة أخرى.');
+      }
+    }
   };
 
-  const toggleFeatured = (id: number) => {
-    const newProperties = properties.map(p =>
-      p.id === id ? { ...p, featured: !p.featured } : p
-    );
-    saveProperties(newProperties);
+  const handleStatusChange = async (id: number, status: Property['status']) => {
+    try {
+      await propertyService.update(id, { status });
+      const newProperties = properties.map(p =>
+        p.id === id ? { ...p, status } : p
+      );
+      setProperties(newProperties);
+      // حفظ احتياطي محلي
+      saveProperties(newProperties);
+    } catch (error) {
+      console.error('خطأ في تحديث حالة العقار:', error);
+      alert('فشل في تحديث حالة العقار. يرجى المحاولة مرة أخرى.');
+    }
+  };
+
+  const toggleFeatured = async (id: number) => {
+    try {
+      const property = properties.find(p => p.id === id);
+      if (property) {
+        await propertyService.update(id, { featured: !property.featured });
+        const newProperties = properties.map(p =>
+          p.id === id ? { ...p, featured: !p.featured } : p
+        );
+        setProperties(newProperties);
+        // حفظ احتياطي محلي
+        saveProperties(newProperties);
+      }
+    } catch (error) {
+      console.error('خطأ في تحديث العقار المميز:', error);
+      alert('فشل في تحديث العقار المميز. يرجى المحاولة مرة أخرى.');
+    }
   };
 
   // دالة لتنظيف التخزين المحلي

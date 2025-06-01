@@ -3,23 +3,9 @@
 import Link from "next/link";
 import { useState, useEffect } from 'react';
 import ImageGallery from '../components/ImageGallery';
+import { propertyService, Property } from '../../lib/supabase';
 
-interface Property {
-  id: number;
-  title: string;
-  location: string;
-  price: string;
-  bedrooms: number;
-  bathrooms: number;
-  area: string;
-  phone: string;
-  features: string[];
-  category: string;
-  status: 'available' | 'rented' | 'maintenance';
-  featured: boolean;
-  images: string[];
-  mainImage: string;
-}
+// Property interface is now imported from supabase.ts
 
 // بيانات المنازل التجريبية الافتراضية
 const defaultProperties = [
@@ -134,17 +120,7 @@ export default function Properties() {
   });
 
   useEffect(() => {
-    // تحميل العقارات من localStorage
-    const savedProperties = localStorage.getItem('properties');
-    if (savedProperties) {
-      const parsedProperties = JSON.parse(savedProperties);
-      // عرض العقارات المتاحة فقط
-      setProperties(parsedProperties.filter((p: Property) => p.status === 'available'));
-    } else {
-      // استخدام البيانات الافتراضية
-      setProperties(defaultProperties.filter(p => p.status === 'available'));
-    }
-    setLoading(false);
+    loadProperties();
 
     // فحص معاملات URL للفلترة
     const urlParams = new URLSearchParams(window.location.search);
@@ -153,6 +129,32 @@ export default function Properties() {
       setFilters(prev => ({ ...prev, type: typeParam }));
     }
   }, []);
+
+  const loadProperties = async () => {
+    try {
+      setLoading(true);
+      const data = await propertyService.getAvailable();
+      // تحويل البيانات لتتماشى مع الواجهة الحالية
+      const formattedData = data.map(property => ({
+        ...property,
+        mainImage: property.main_image,
+        images: property.images || []
+      }));
+      setProperties(formattedData);
+    } catch (error) {
+      console.error('خطأ في تحميل العقارات:', error);
+      // في حالة فشل تحميل البيانات من قاعدة البيانات، استخدم البيانات المحلية
+      const savedProperties = localStorage.getItem('properties');
+      if (savedProperties) {
+        const parsedProperties = JSON.parse(savedProperties);
+        setProperties(parsedProperties.filter((p: Property) => p.status === 'available'));
+      } else {
+        setProperties(defaultProperties.filter(p => p.status === 'available'));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const openGallery = (property: Property) => {
     if (property.images.length > 0) {
