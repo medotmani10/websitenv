@@ -159,7 +159,7 @@ export const propertyService = {
     }
 
     const { data, error } = await query.order('created_at', { ascending: false })
-    
+
     if (error) throw error
     return data as Property[]
   }
@@ -185,7 +185,7 @@ export const userService = {
         }
       }
     })
-    
+
     if (error) throw error
     return data
   },
@@ -196,7 +196,7 @@ export const userService = {
       email,
       password
     })
-    
+
     if (error) throw error
     return data
   },
