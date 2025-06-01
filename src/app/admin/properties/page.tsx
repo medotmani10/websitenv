@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { propertyService, Property, storageService } from '../../lib/supabase';
+import { propertyService, Property, storageService } from '../../../lib/supabase';
 
 // Property interface is now imported from supabase.ts
 

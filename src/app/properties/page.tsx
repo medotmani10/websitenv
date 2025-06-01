@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from 'react';
 import ImageGallery from '../components/ImageGallery';
-import { propertyService, Property } from '../lib/supabase';
+import { propertyService, Property } from '../../lib/supabase';
 
 // Property interface is now imported from supabase.ts
 
