@@ -128,6 +128,13 @@ export default function Properties() {
     if (typeParam) {
       setFilters(prev => ({ ...prev, type: typeParam }));
     }
+
+    // إعادة تحميل البيانات كل 30 ثانية للحصول على آخر التحديثات
+    const interval = setInterval(() => {
+      loadProperties();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const loadProperties = async () => {
@@ -285,12 +292,19 @@ export default function Properties() {
                 <option value="5">5+ غرف</option>
               </select>
             </div>
-            <div className="flex items-end">
+            <div className="flex items-end space-x-2">
               <button
                 onClick={() => setFilters({type: '', location: '', priceRange: '', bedrooms: ''})}
-                className="w-full bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors"
+                className="flex-1 bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors"
               >
                 مسح الفلاتر
+              </button>
+              <button
+                onClick={loadProperties}
+                disabled={loading}
+                className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+              >
+                {loading ? '🔄 تحديث...' : '🔄 تحديث'}
               </button>
             </div>
           </div>

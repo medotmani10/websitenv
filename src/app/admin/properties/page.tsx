@@ -103,10 +103,9 @@ export default function AdminProperties() {
     if (confirm('هل أنت متأكد من حذف هذا العقار؟')) {
       try {
         await propertyService.delete(id);
-        const newProperties = properties.filter(p => p.id !== id);
-        setProperties(newProperties);
-        // حفظ احتياطي محلي
-        saveProperties(newProperties);
+        // إعادة تحميل البيانات من قاعدة البيانات
+        await loadProperties();
+        alert('تم حذف العقار بنجاح!');
       } catch (error) {
         console.error('خطأ في حذف العقار:', error);
         alert('فشل في حذف العقار. يرجى المحاولة مرة أخرى.');
@@ -117,12 +116,8 @@ export default function AdminProperties() {
   const handleStatusChange = async (id: number, status: Property['status']) => {
     try {
       await propertyService.update(id, { status });
-      const newProperties = properties.map(p =>
-        p.id === id ? { ...p, status } : p
-      );
-      setProperties(newProperties);
-      // حفظ احتياطي محلي
-      saveProperties(newProperties);
+      // إعادة تحميل البيانات من قاعدة البيانات
+      await loadProperties();
     } catch (error) {
       console.error('خطأ في تحديث حالة العقار:', error);
       alert('فشل في تحديث حالة العقار. يرجى المحاولة مرة أخرى.');
@@ -134,12 +129,8 @@ export default function AdminProperties() {
       const property = properties.find(p => p.id === id);
       if (property) {
         await propertyService.update(id, { featured: !property.featured });
-        const newProperties = properties.map(p =>
-          p.id === id ? { ...p, featured: !p.featured } : p
-        );
-        setProperties(newProperties);
-        // حفظ احتياطي محلي
-        saveProperties(newProperties);
+        // إعادة تحميل البيانات من قاعدة البيانات
+        await loadProperties();
       }
     } catch (error) {
       console.error('خطأ في تحديث العقار المميز:', error);
@@ -210,12 +201,20 @@ export default function AdminProperties() {
               </Link>
               <h1 className="text-2xl font-bold text-gray-900">إدارة العقارات</h1>
             </div>
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              + إضافة عقار جديد
-            </button>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={loadProperties}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                🔄 تحديث البيانات
+              </button>
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                + إضافة عقار جديد
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -403,23 +402,54 @@ export default function AdminProperties() {
       {(showAddForm || editingProperty) && (
         <PropertyFormModal
           property={editingProperty}
-          onSave={(property) => {
-            if (editingProperty) {
-              // تعديل عقار موجود
-              const newProperties = properties.map(p => 
-                p.id === property.id ? property : p
-              );
-              saveProperties(newProperties);
-            } else {
-              // إضافة عقار جديد
-              const newProperty = {
-                ...property,
-                id: Math.max(...properties.map(p => p.id), 0) + 1
-              };
-              saveProperties([...properties, newProperty]);
+          onSave={async (property) => {
+            try {
+              if (editingProperty) {
+                // تعديل عقار موجود
+                await propertyService.update(editingProperty.id, {
+                  title: property.title,
+                  location: property.location,
+                  price: property.price,
+                  bedrooms: property.bedrooms,
+                  bathrooms: property.bathrooms,
+                  area: property.area,
+                  phone: property.phone,
+                  features: property.features,
+                  category: property.category,
+                  status: property.status,
+                  featured: property.featured,
+                  images: property.images,
+                  main_image: property.mainImage || ''
+                });
+                alert('تم تحديث العقار بنجاح!');
+              } else {
+                // إضافة عقار جديد
+                await propertyService.create({
+                  title: property.title,
+                  location: property.location,
+                  price: property.price,
+                  bedrooms: property.bedrooms,
+                  bathrooms: property.bathrooms,
+                  area: property.area,
+                  phone: property.phone,
+                  features: property.features,
+                  category: property.category,
+                  status: property.status,
+                  featured: property.featured,
+                  images: property.images,
+                  main_image: property.mainImage || ''
+                });
+                alert('تم إضافة العقار بنجاح!');
+              }
+
+              // إعادة تحميل البيانات من قاعدة البيانات
+              await loadProperties();
+              setShowAddForm(false);
+              setEditingProperty(null);
+            } catch (error) {
+              console.error('خطأ في حفظ العقار:', error);
+              alert('فشل في حفظ العقار. يرجى المحاولة مرة أخرى.');
             }
-            setShowAddForm(false);
-            setEditingProperty(null);
           }}
           onCancel={() => {
             setShowAddForm(false);
